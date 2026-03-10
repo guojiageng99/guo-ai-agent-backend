@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+
 @Configuration
 @Slf4j
 class LoveAppRagCloudAdvisorConfig {
@@ -20,7 +21,10 @@ class LoveAppRagCloudAdvisorConfig {
 
     @Bean
     public Advisor loveAppRagCloudAdvisor() {
-        DashScopeApi dashScopeApi = new DashScopeApi(dashScopeApiKey);
+        DashScopeApi dashScopeApi = DashScopeApi.builder()
+                .apiKey(dashScopeApiKey)
+                .build();
+
         final String KNOWLEDGE_INDEX = "恋爱大师";
         DocumentRetriever documentRetriever = new DashScopeDocumentRetriever(dashScopeApi,
                 DashScopeDocumentRetrieverOptions.builder()
