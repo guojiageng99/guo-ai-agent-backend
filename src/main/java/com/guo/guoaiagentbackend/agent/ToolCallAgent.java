@@ -39,16 +39,17 @@ public class ToolCallAgent extends ReActAgent {
   
     // 禁用内置的工具调用机制，自己维护上下文  
     private final ChatOptions chatOptions;
-  
-    public ToolCallAgent(ToolCallback[] availableTools) {  
-        super();  
-        this.availableTools = availableTools;  
-        this.toolCallingManager = ToolCallingManager.builder().build();  
-        // 禁用 Spring AI 内置的工具调用机制，自己维护选项和消息上下文  
+
+    public ToolCallAgent(ToolCallback[] availableTools) {
+        super();
+        this.availableTools = availableTools;
+        this.toolCallingManager = ToolCallingManager.builder().build();
+        // 禁用 Spring AI 内置的工具调用机制，自己维护选项和消息上下文
         this.chatOptions = DashScopeChatOptions.builder()
-                .withProxyToolCalls(true)  
-                .build();  
+                .withInternalToolExecutionEnabled(false)
+                .build();
     }
+
 
     /**
      * 处理当前状态并决定下一步行动
