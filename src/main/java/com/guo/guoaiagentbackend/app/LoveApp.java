@@ -10,6 +10,8 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
@@ -35,10 +37,23 @@ public class LoveApp {
     public LoveApp(ChatModel dashscopeChatModel) {
 //        // 初始化基于内存的对话记忆
 //        ChatMemory chatMemory = new InMemoryChatMemory();
+        /*// 初始化基于内存的对话记忆
+        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .maxMessages(20)
+                .build();*/
+
         // 初始化基于文件的对话记忆
         String fileDir = System.getProperty("user.dir") + "/chat-memory";
         ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
         chatClient = ChatClient.builder(dashscopeChatModel)
+                .defaultSystem(SYSTEM_PROMPT)
+                .defaultAdvisors(
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                        )
+                .build();
+
+        /*chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
                         new MessageChatMemoryAdvisor(chatMemory),
@@ -48,7 +63,7 @@ public class LoveApp {
 //                        new ReReadingAdvisor()
                         )
                 .build();
-
+*/
 
     }
 
