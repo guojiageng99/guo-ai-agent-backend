@@ -11,7 +11,7 @@ spring:
 #            server1:
 #              url: http://localhost:8127
          stdio:
-         servers-configuration: classpath:mcp-servers.json
+           servers-configuration: classpath:mcp-servers.json
 
 server:
   port: 8123

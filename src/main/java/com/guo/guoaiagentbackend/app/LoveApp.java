@@ -3,8 +3,11 @@ package com.guo.guoaiagentbackend.app;
 import com.guo.guoaiagentbackend.advisor.MyLoggerAdvisor;
 import com.guo.guoaiagentbackend.advisor.ReReadingAdvisor;
 import com.guo.guoaiagentbackend.chatmemory.FileBasedChatMemory;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -14,12 +17,16 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.mcp.SyncMcpToolCallback;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -27,6 +34,14 @@ import java.util.List;
 @Slf4j
 public class LoveApp {
 
+//    private static final Logger log = LoggerFactory.getLogger(LoveApp.class);
+    @PostConstruct
+    public void checkMcpCallback() {
+        log.info("✅ toolCallbackProvider 是否为 null：{}", toolCallbackProvider == null);
+        if (toolCallbackProvider != null) {
+            log.info("✅ toolCallbackProvider 类型：{}", toolCallbackProvider.getClass().getName());
+        }
+    }
     private final ChatClient chatClient;
 
     private static final String SYSTEM_PROMPT = "扮演深耕恋爱心理领域的专家。开场向用户表明身份，告知用户可倾诉恋爱难题。" +
@@ -186,6 +201,9 @@ public class LoveApp {
         log.info("content: {}", content);
         return content;
     }
+
+
+  
 
 
     public Flux<String> doChatByStream(String message, String chatId) {
