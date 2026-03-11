@@ -1,6 +1,6 @@
 spring:
   application:
-    name: guo-image-search-mcp-server
+    name: guo-image-search-mcp
   profiles:
     active: stdio, local
 server:

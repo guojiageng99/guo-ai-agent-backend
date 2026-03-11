@@ -2,7 +2,7 @@ spring:
   ai:
     mcp:
       server:
-        name: guo-image-search-mcp-server
+        name: guo-image-search-mcp
         version: 0.0.1
         type: SYNC
         # sse
