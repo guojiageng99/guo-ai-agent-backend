@@ -4,8 +4,11 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -15,18 +18,44 @@ import java.util.stream.Collectors;
 
 @Service
 public class ImageSearchTool {
+    // 新增：添加日志对象（用于输出服务端日志）
+    private static final Logger log = LoggerFactory.getLogger(ImageSearchTool.class);
+
+    // 从配置文件注入，不再硬编码
+    @Value("${pexels.api.key}")
+    private String API_KEY;
+
+    @Value("${pexels.api.url:https://api.pexels.com/v1/search}") // 冒号后是默认值
+    private String API_URL;
 
     // 替换为你的 Pexels API 密钥（需从官网申请）
-    private static final String API_KEY = "你的 API Key";
+//    private static final String API_KEY = "你的 API Key";
 
     // Pexels 常规搜索接口（请以文档为准）
-    private static final String API_URL = "https://api.pexels.com/v1/search";
+//    private static final String API_URL = "https://api.pexels.com/v1/search";
 
-    @Tool(description = "search image from web")
+    /*@Tool(description = "search image from web")
     public String searchImage(@ToolParam(description = "Search query keyword") String query) {
         try {
             return String.join(",", searchMediumImages(query));
         } catch (Exception e) {
+            return "Error search image: " + e.getMessage();
+        }
+    }*/
+    @Tool(description = "search image from web, return medium size image urls")
+    public String searchImage(@ToolParam(description = "Search query keyword") String query) {
+        // 新增：服务端日志 - 记录接收到的调用参数
+        log.info("✅ MCP服务端接收到图片搜索调用，关键词：{}", query);
+
+        try {
+            List<String> imageUrls = searchMediumImages(query);
+            // 新增：服务端日志 - 记录返回的链接数量
+            log.info("✅ 图片搜索完成，返回{}个链接：{}", imageUrls.size(), String.join(",", imageUrls));
+
+            return String.join(",", imageUrls);
+        } catch (Exception e) {
+            // 新增：服务端日志 - 记录异常
+            log.error("❌ 图片搜索失败：", e);
             return "Error search image: " + e.getMessage();
         }
     }
@@ -45,6 +74,7 @@ public class ImageSearchTool {
         // 设置请求参数（仅包含query，可根据文档补充page、per_page等参数）
         Map<String, Object> params = new HashMap<>();
         params.put("query", query);
+        params.put("per_page", 5); // 可选：限制返回5张图片，避免数量过多
 
         // 发送 GET 请求
         String response = HttpUtil.createGet(API_URL)
