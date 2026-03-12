@@ -1,25 +1,38 @@
 <template>
   <div id="app">
-    <router-view />
+    <main class="main-content">
+      <router-view v-slot="{ Component }">
+        <component :is="Component" />
+      </router-view>
+    </main>
+    <Footer v-if="showFooter" />
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import Footer from './components/Footer.vue'
+
+const route = useRoute()
+const showFooter = computed(() => route.path === '/')
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import './assets/styles.css';
+</style>
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #f5f5f5;
-}
-
+<style scoped>
 #app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 </style>
