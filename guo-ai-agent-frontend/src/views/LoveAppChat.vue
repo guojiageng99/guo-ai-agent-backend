@@ -15,7 +15,9 @@
         >
           <div class="message-content">
             <div class="avatar">{{ msg.role === 'user' ? '我' : 'AI' }}</div>
-            <div class="bubble">{{ msg.content }}</div>
+            <div class="bubble">
+              {{ msg.isStreaming ? streamingContent : msg.content }}
+            </div>
           </div>
         </div>
       </div>
@@ -50,6 +52,8 @@ const messages = ref([])
 const inputText = ref('')
 const loading = ref(false)
 const messagesRef = ref(null)
+// 用于流式响应的内容，确保 Vue 响应式更新，实现打字机效果
+const streamingContent = ref('')
 let abortController = null
 
 onMounted(() => {
@@ -63,8 +67,10 @@ async function sendMessage() {
   messages.value.push({ role: 'user', content: text })
   inputText.value = ''
   loading.value = true
+  streamingContent.value = ''
 
-  const aiMessage = { role: 'assistant', content: '' }
+  // 占位一条 AI 消息，流式内容在 streamingContent 中累积，完成后写入 content
+  const aiMessage = { role: 'assistant', content: '', isStreaming: true }
   messages.value.push(aiMessage)
 
   await nextTick()
@@ -75,14 +81,21 @@ async function sendMessage() {
     chatId.value,
     {
       onChunk: (chunk) => {
-        aiMessage.content += chunk
+        // 持续接收碎片，在同一消息气泡中拼接，实现打字机效果
+        streamingContent.value += chunk
         nextTick(scrollToBottom)
       },
       onComplete: () => {
+        aiMessage.content = streamingContent.value
+        aiMessage.isStreaming = false
+        streamingContent.value = ''
         loading.value = false
+        nextTick(scrollToBottom)
       },
       onError: (err) => {
-        aiMessage.content += `\n[错误: ${err.message}]`
+        aiMessage.content = streamingContent.value + `\n[错误: ${err.message}]`
+        aiMessage.isStreaming = false
+        streamingContent.value = ''
         loading.value = false
       }
     }
