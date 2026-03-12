@@ -12,6 +12,12 @@
       <p class="subtitle">选择您的智能体，开启极客之旅</p>
     </header>
 
+    <div class="typewriter-banner">
+      <p class="typewriter-text">
+        {{ displayedText }}<span v-if="!typewriterDone" class="cursor">|</span>
+      </p>
+    </div>
+
     <div class="app-cards">
       <router-link to="/love-app" class="app-card app-card-love">
         <div class="card-glow"></div>
@@ -33,6 +39,32 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+
+const typewriterText = '探索AI的无限可能，体验智能对话的魅力'
+const displayedText = ref('')
+const typewriterDone = ref(false)
+const typingSpeed = 100
+
+function runTypewriter() {
+  let index = 0
+
+  function tick() {
+    displayedText.value = typewriterText.slice(0, index + 1)
+    index++
+    if (index < typewriterText.length) {
+      setTimeout(tick, typingSpeed)
+    } else {
+      typewriterDone.value = true
+    }
+  }
+
+  tick()
+}
+
+onMounted(() => {
+  runTypewriter()
+})
 </script>
 
 <style scoped>
@@ -94,6 +126,33 @@
 .subtitle {
   font-size: 1rem;
   color: var(--color-text-muted);
+}
+
+.typewriter-banner {
+  position: relative;
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 20px 24px;
+}
+
+.typewriter-text {
+  font-size: 1.1rem;
+  color: var(--color-text);
+  line-height: 1.8;
+  min-height: 2em;
+}
+
+.cursor {
+  display: inline-block;
+  color: var(--color-accent);
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 .app-cards {
@@ -220,6 +279,15 @@
     margin-bottom: 36px;
   }
 
+  .typewriter-banner {
+    margin-bottom: 32px;
+    padding: 16px;
+  }
+
+  .typewriter-text {
+    font-size: 1rem;
+  }
+
   .app-cards {
     flex-direction: column;
     align-items: center;
@@ -236,6 +304,10 @@
 @media (max-width: 480px) {
   .home {
     padding: 24px 12px 40px;
+  }
+
+  .typewriter-text {
+    font-size: 0.95rem;
   }
 
   .logo-badge {
