@@ -33,14 +33,14 @@ public class AiController {
         return loveApp.doChat(message, chatId);
     }
 
-    /*@GetMapping(value = "/love_app/chat/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/love_app/chat/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> doChatWithLoveAppSSE(String message, String chatId) {
         return loveApp.doChatByStream(message, chatId);
-    }*/
+    }
 
 
-    @GetMapping(value = "/love_app/chat/sse")
-    public Flux<ServerSentEvent<String>> doChatWithLoveAppSSE(String message, String chatId) {
+    @GetMapping(value = "/love_app/chat/server_sent_event")
+    public Flux<ServerSentEvent<String>> doChatWithLoveAppServerSentEvent(String message, String chatId) {
         return loveApp.doChatByStream(message, chatId)
                 .map(chunk -> ServerSentEvent.<String>builder()
                         .data(chunk)

@@ -17,6 +17,11 @@ server:
   port: 8123
   servlet:
     context-path: /api
+  http:
+    encoding:
+      enabled: true
+      charset: UTF-8
+      force: true
 # springdoc-openapi
 springdoc:
   swagger-ui:
@@ -28,7 +33,9 @@ springdoc:
   group-configs:
     - group: 'default'
       paths-to-match: '/**'
-      packages-to-scan: com.guo.guoaiagentbackend.controller
+      packages-to-scan:
+        - com.guo.guoaiagentbackend.controller
+        - com.guo.guoaiagentbackend.AiController
 # knife4j
 knife4j:
   enable: true
