@@ -14,9 +14,7 @@
         >
           <div class="message-content">
             <div class="avatar">{{ msg.role === 'user' ? '我' : 'AI' }}</div>
-            <div class="bubble">
-              {{ msg.isStreaming ? streamingContent : msg.content }}
-            </div>
+            <div class="bubble">{{ msg.content }}</div>
           </div>
         </div>
       </div>
@@ -49,7 +47,6 @@ const messages = ref([])
 const inputText = ref('')
 const loading = ref(false)
 const messagesRef = ref(null)
-const streamingContent = ref('')
 let abortController = null
 
 async function sendMessage() {
@@ -59,31 +56,26 @@ async function sendMessage() {
   messages.value.push({ role: 'user', content: text })
   inputText.value = ''
   loading.value = true
-  streamingContent.value = ''
-
-  const aiMessage = { role: 'assistant', content: '', isStreaming: true }
-  messages.value.push(aiMessage)
 
   await nextTick()
   scrollToBottom()
 
+  // 每次 SSE 响应对应 AI 智能体的一个步骤，每个步骤单独一个气泡输出
   abortController = chatWithManusSse(text, {
     onChunk: (chunk) => {
-      streamingContent.value += chunk
-      nextTick(scrollToBottom)
+      if (chunk && chunk.trim()) {
+        messages.value.push({ role: 'assistant', content: chunk.trim() })
+        nextTick(scrollToBottom)
+      }
     },
     onComplete: () => {
-      aiMessage.content = streamingContent.value
-      aiMessage.isStreaming = false
-      streamingContent.value = ''
       loading.value = false
       nextTick(scrollToBottom)
     },
     onError: (err) => {
-      aiMessage.content = streamingContent.value + `\n[错误: ${err.message}]`
-      aiMessage.isStreaming = false
-      streamingContent.value = ''
+      messages.value.push({ role: 'assistant', content: `[错误: ${err.message}]` })
       loading.value = false
+      nextTick(scrollToBottom)
     }
   })
 }
