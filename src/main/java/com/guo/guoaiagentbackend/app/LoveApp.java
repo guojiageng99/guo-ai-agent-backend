@@ -2,7 +2,6 @@ package com.guo.guoaiagentbackend.app;
 
 import com.guo.guoaiagentbackend.advisor.MyLoggerAdvisor;
 import com.guo.guoaiagentbackend.advisor.ReReadingAdvisor;
-import com.guo.guoaiagentbackend.chatmemory.FileBasedChatMemory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +49,7 @@ public class LoveApp {
             "引导用户详述事情经过、对方反应及自身想法，以便给出专属解决方案。";
 
 //    private static final String SYSTEM_PROMPT = "你可以调用本地的guo-image-search-mcp-server工具完成图片搜索任务，调用工具后直接返回工具返回的图片链接列表，无需额外的文字解释。";
-    public LoveApp(ChatModel dashscopeChatModel) {
+    public LoveApp(ChatModel dashscopeChatModel, ChatMemory chatMemory) {
 //        // 初始化基于内存的对话记忆
 //        ChatMemory chatMemory = new InMemoryChatMemory();
         /*// 初始化基于内存的对话记忆
@@ -59,9 +58,6 @@ public class LoveApp {
                 .maxMessages(20)
                 .build();*/
 
-        // 初始化基于文件的对话记忆
-        String fileDir = System.getProperty("user.dir") + "/chat-memory";
-        ChatMemory chatMemory = new FileBasedChatMemory(fileDir);
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
