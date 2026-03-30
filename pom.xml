@@ -134,11 +134,11 @@
             <type>pom</type>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.itextpdf/font-asian -->
+        <!-- 运行时需要：STSongStd-Light 等 CJK 字体名由该包注册，仅 test 会导致智能体调用 generatePDF 报字体未识别 -->
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>font-asian</artifactId>
             <version>9.1.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>

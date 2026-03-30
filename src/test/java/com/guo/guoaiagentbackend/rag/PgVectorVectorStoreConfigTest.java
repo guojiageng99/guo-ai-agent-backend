@@ -3,6 +3,7 @@ package com.guo.guoaiagentbackend.rag;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -11,7 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.List;
 import java.util.Map;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.rag.pgvector-enabled=true")
+@EnabledIfSystemProperty(named = "app.pgvector.it", matches = "true")
 public class PgVectorVectorStoreConfigTest {
 
     @Resource

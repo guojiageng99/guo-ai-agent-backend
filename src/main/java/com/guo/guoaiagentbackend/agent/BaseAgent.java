@@ -69,13 +69,13 @@ public abstract class BaseAgent {
                 log.info("Executing step " + stepNumber + "/" + maxSteps);  
                 // 单步执行  
                 String stepResult = step();  
-                String result = "Step " + stepNumber + ": " + stepResult;  
+                String result = "步骤 " + stepNumber + ": " + stepResult;  
                 results.add(result);  
             }  
             // 检查是否超出步骤限制  
             if (currentStep >= maxSteps) {  
                 state = AgentState.FINISHED;  
-                results.add("Terminated: Reached max steps (" + maxSteps + ")");  
+                results.add("已终止：已达到最大步骤数（" + maxSteps + "）");  
             }  
             return String.join("\n", results);  
         } catch (Exception e) {  
@@ -139,7 +139,7 @@ public abstract class BaseAgent {
 
                         // 单步执行
                         String stepResult = step();
-                        String result = "Step " + stepNumber + ": " + stepResult;
+                        String result = "步骤 " + stepNumber + ": " + stepResult;
 
                         // 发送每一步的结果
                         emitter.send(result);
@@ -147,7 +147,7 @@ public abstract class BaseAgent {
                     // 检查是否超出步骤限制
                     if (currentStep >= maxSteps) {
                         state = AgentState.FINISHED;
-                        emitter.send("执行结束: 达到最大步骤 (" + maxSteps + ")");
+                        emitter.send("执行结束：已达到最大步骤数（" + maxSteps + "）");
                     }
                     // 正常完成
                     emitter.complete();

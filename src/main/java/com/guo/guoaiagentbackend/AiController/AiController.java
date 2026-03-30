@@ -2,6 +2,8 @@ package com.guo.guoaiagentbackend.AiController;
 
 import com.guo.guoaiagentbackend.agent.YuManus;
 import com.guo.guoaiagentbackend.app.LoveApp;
+import com.guo.guoaiagentbackend.common.BaseResponse;
+import com.guo.guoaiagentbackend.common.ResultUtils;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
@@ -29,8 +31,8 @@ public class AiController {
     private ChatModel dashscopeChatModel;
 
     @GetMapping("/love_app/chat/sync")
-    public String doChatWithLoveAppSync(String message, String chatId) {
-        return loveApp.doChat(message, chatId);
+    public BaseResponse<String> doChatWithLoveAppSync(String message, String chatId) {
+        return ResultUtils.success(loveApp.doChat(message, chatId));
     }
 
     @GetMapping(value = "/love_app/chat/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

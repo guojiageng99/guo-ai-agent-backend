@@ -1,5 +1,6 @@
 // 开发环境使用相对路径走 Vite 代理，生产环境使用完整地址
-const API_BASE = import.meta.env.DEV ? '/api' : 'http://localhost:8123/api'
+// const API_BASE = import.meta.env.DEV ? '/api' : 'http://localhost:8123/api'
+const API_BASE = import.meta.env.DEV ? '/api' : '/api'
 
 /**
  * 调用 Love App SSE 接口，流式获取对话内容
@@ -44,7 +45,17 @@ function fetchSse(url, { onChunk, onComplete, onError }) {
   })
     .then(async (response) => {
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        let detail = response.statusText
+        try {
+          const text = await response.clone().text()
+          const json = JSON.parse(text)
+          if (json && typeof json.message === 'string' && json.message) {
+            detail = json.message
+          }
+        } catch {
+          /* 非 JSON 错误体则沿用 statusText */
+        }
+        throw new Error(`HTTP ${response.status}: ${detail}`)
       }
       const reader = response.body.getReader()
       const decoder = new TextDecoder()

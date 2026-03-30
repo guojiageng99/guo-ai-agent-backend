@@ -5,6 +5,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,7 +15,12 @@ import java.util.List;
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgDistanceType.COSINE_DISTANCE;
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgIndexType.HNSW;
 
+/**
+ * 仅当 {@code app.rag.pgvector-enabled=true} 且 PostgreSQL（含 pgvector）可连时注册；
+ * 否则不创建本 Bean，避免本地未起数据库时整个应用无法启动。
+ */
 @Configuration
+@ConditionalOnProperty(prefix = "app.rag", name = "pgvector-enabled", havingValue = "true")
 public class PgVectorVectorStoreConfig {
 
     @Resource
