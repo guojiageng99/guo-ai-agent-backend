@@ -3,6 +3,10 @@
     <header class="chat-header">
       <router-link to="/" class="back-btn">← 返回</router-link>
       <h1>AI 超级智能体</h1>
+      <div class="header-right">
+        <span class="user-name">{{ displayName }}</span>
+        <button type="button" class="header-logout" @click="logout">退出</button>
+      </div>
     </header>
 
     <div class="chat-container">
@@ -40,8 +44,18 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { chatWithManusSse } from '../utils/sse'
+import { clearAuth, getStoredUsername } from '../utils/authToken'
+
+const router = useRouter()
+const displayName = computed(() => getStoredUsername() || '用户')
+
+function logout() {
+  clearAuth()
+  router.replace('/login?redirect=/manus')
+}
 
 const messages = ref([])
 const inputText = ref('')
@@ -89,9 +103,14 @@ function scrollToBottom() {
 <style scoped>
 .chat-page {
   flex: 1;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   background: var(--color-bg-dark);
 }
 
@@ -104,6 +123,8 @@ function scrollToBottom() {
   align-items: center;
   gap: 16px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .back-btn {
@@ -119,12 +140,46 @@ function scrollToBottom() {
 
 .chat-header h1 {
   flex: 1;
+  min-width: 0;
   font-family: var(--font-display);
   font-size: 1.15rem;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-logout {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.header-logout:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
 .chat-container {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -135,11 +190,14 @@ function scrollToBottom() {
 
 .messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .message-content {
@@ -215,6 +273,8 @@ function scrollToBottom() {
   gap: 12px;
   align-items: flex-end;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .input-area textarea {

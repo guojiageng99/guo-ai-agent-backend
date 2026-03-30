@@ -1,3 +1,5 @@
+import { getToken, redirectToLogin } from './authToken'
+
 // 开发环境使用相对路径走 Vite 代理，生产环境使用完整地址
 // const API_BASE = import.meta.env.DEV ? '/api' : 'http://localhost:8123/api'
 const API_BASE = import.meta.env.DEV ? '/api' : '/api'
@@ -36,14 +38,24 @@ function fetchSse(url, { onChunk, onComplete, onError }) {
   const controller = new AbortController()
   const signal = controller.signal
 
+  const headers = {
+    Accept: 'text/event-stream'
+  }
+  const token = getToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
   fetch(url, {
     method: 'GET',
     signal,
-    headers: {
-      Accept: 'text/event-stream'
-    }
+    headers
   })
     .then(async (response) => {
+      if (response.status === 401) {
+        redirectToLogin()
+        throw new Error('未登录或登录已失效')
+      }
       if (!response.ok) {
         let detail = response.statusText
         try {

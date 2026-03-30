@@ -1,11 +1,18 @@
 <template>
   <div class="home">
     <div class="grid-bg" aria-hidden="true"></div>
-    <header class="header">
+    <div class="top-fixed">
       <div class="logo-badge">
         <span class="logo-icon">&lt;/&gt;</span>
         <span class="logo-text">AI_AGENT</span>
       </div>
+      <div v-if="loggedIn" class="user-bar">
+        <span class="user-name">{{ displayName }}</span>
+        <button type="button" class="btn-logout" @click="logout">退出</button>
+      </div>
+      <router-link v-else to="/login" class="btn-login">登录</router-link>
+    </div>
+    <header class="header">
       <h1 class="title">
         <span class="title-line">AI 应用中心</span>
       </h1>
@@ -39,7 +46,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { clearAuth, getStoredUsername, isLoggedIn } from '../utils/authToken'
+
+const router = useRouter()
+const loggedIn = ref(isLoggedIn())
+const displayName = computed(() => getStoredUsername() || '已登录')
+
+function logout() {
+  clearAuth()
+  loggedIn.value = false
+  router.replace('/')
+}
 
 const typewriterText = '探索AI的无限可能，体验智能对话的魅力'
 const displayedText = ref('')
@@ -63,6 +82,7 @@ function runTypewriter() {
 }
 
 onMounted(() => {
+  loggedIn.value = isLoggedIn()
   runTypewriter()
 })
 </script>
@@ -71,8 +91,23 @@ onMounted(() => {
 .home {
   position: relative;
   min-height: 100vh;
-  padding: 48px 24px 64px;
+  padding: 72px 24px 64px;
   overflow: hidden;
+}
+
+.top-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(10, 12, 18, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .grid-bg {
@@ -95,14 +130,56 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: rgba(0, 212, 255, 0.1);
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: var(--radius-sm);
-  margin-bottom: 24px;
   font-family: var(--font-display);
   font-size: 0.85rem;
   letter-spacing: 0.1em;
+}
+
+.user-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.user-name {
+  color: var(--color-text);
+}
+
+.btn-logout,
+.btn-login {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-login {
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  background: transparent;
+}
+
+.btn-login:hover {
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.btn-logout {
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-bg-card);
+}
+
+.btn-logout:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .logo-icon {
