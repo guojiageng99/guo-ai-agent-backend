@@ -25,18 +25,29 @@
       <div class="input-area">
         <textarea
           v-model="inputText"
-          placeholder="输入您的问题..."
+          placeholder="输入您的问题；可点「对象推荐」根据择偶/交友需求匹配资料库中的候选人"
           rows="2"
           :disabled="loading"
           @keydown.enter.exact.prevent="sendMessage"
         />
-        <button
-          class="send-btn"
-          :disabled="loading || !inputText.trim()"
-          @click="sendMessage"
-        >
-          {{ loading ? '发送中...' : '发送' }}
-        </button>
+        <div class="input-actions">
+          <button
+            type="button"
+            class="recommend-btn"
+            :disabled="loading || !inputText.trim()"
+            title="基于知识库中的恋爱对象档案做匹配推荐（非流式）"
+            @click="sendRecommend"
+          >
+            {{ loading ? '请稍候…' : '对象推荐' }}
+          </button>
+          <button
+            class="send-btn"
+            :disabled="loading || !inputText.trim()"
+            @click="sendMessage"
+          >
+            {{ loading ? '请稍候…' : '发送' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -46,6 +57,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { generateChatId } from '../utils/chatId'
 import { chatWithLoveAppSse } from '../utils/sse'
+import { recommendPartner } from '../api/loveApp'
 
 const chatId = ref('')
 const messages = ref([])
@@ -97,6 +109,32 @@ async function sendMessage() {
       }
     }
   )
+}
+
+/** 对象推荐：走 RAG 推荐接口，一次性展示全文（不走 SSE） */
+async function sendRecommend() {
+  const text = inputText.value.trim()
+  if (!text || loading.value) return
+
+  messages.value.push({ role: 'user', content: `【对象推荐】${text}` })
+  inputText.value = ''
+  loading.value = true
+
+  const aiMessage = { role: 'assistant', content: '正在从资料库匹配…', isStreaming: false }
+  messages.value.push(aiMessage)
+
+  await nextTick()
+  scrollToBottom()
+
+  try {
+    const data = await recommendPartner(text, chatId.value)
+    aiMessage.content = typeof data === 'string' ? data : String(data ?? '')
+  } catch (e) {
+    aiMessage.content = `[错误: ${e.message || e}]`
+  } finally {
+    loading.value = false
+    nextTick(scrollToBottom)
+  }
 }
 
 function scrollToBottom() {
@@ -241,6 +279,36 @@ function scrollToBottom() {
   gap: 12px;
   align-items: flex-end;
   flex-shrink: 0;
+}
+
+.input-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.recommend-btn {
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--color-accent-love);
+  border: 1px solid rgba(236, 72, 153, 0.55);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.recommend-btn:hover:not(:disabled) {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: var(--color-accent-love);
+}
+
+.recommend-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .input-area textarea {

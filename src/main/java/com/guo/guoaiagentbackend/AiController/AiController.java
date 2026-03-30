@@ -40,6 +40,14 @@ public class AiController {
         return loveApp.doChatByStream(message, chatId);
     }
 
+    /**
+     * RAG 扩展：根据用户择偶/交友类问题，从知识库「恋爱对象资料」中检索并推荐匹配候选人（同步）。
+     */
+    @GetMapping("/love_app/chat/recommend_partner")
+    public BaseResponse<String> doRecommendPartner(String message, String chatId) {
+        return ResultUtils.success(loveApp.doChatRecommendPartner(message, chatId));
+    }
+
 
     @GetMapping(value = "/love_app/chat/server_sent_event")
     public Flux<ServerSentEvent<String>> doChatWithLoveAppServerSentEvent(String message, String chatId) {
