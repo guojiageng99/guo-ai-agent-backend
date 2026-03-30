@@ -16,8 +16,10 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -132,6 +134,127 @@ public class ToolCallAgent extends ReActAgent {
         log.info(results);
         return results;
 
+    }
+
+    /**
+     * Manus 等工具型智能体：不向用户流式输出工具原始返回（JSON、路径等），只输出模型「不再调用工具」时的自然语言回复。
+     * 工具过程仅写日志，便于排障。
+     */
+    @Override
+    public SseEmitter runStream(String userPrompt) {
+        SseEmitter emitter = new SseEmitter(300_000L);
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (this.getState() != AgentState.IDLE) {
+                    emitter.send("错误：无法从状态运行代理: " + this.getState());
+                    emitter.complete();
+                    return;
+                }
+                if (userPrompt == null || userPrompt.isBlank()) {
+                    emitter.send("错误：不能使用空提示词运行代理");
+                    emitter.complete();
+                    return;
+                }
+
+                this.setState(AgentState.RUNNING);
+                this.getMessageList().add(new UserMessage(userPrompt));
+
+                boolean streamedUserFacing = false;
+                String lastStreamedNormalized = null;
+                try {
+                    for (int i = 0; i < this.getMaxSteps() && this.getState() != AgentState.FINISHED; i++) {
+                        int stepNumber = i + 1;
+                        this.setCurrentStep(stepNumber);
+                        log.info("Executing step {}/{}", stepNumber, this.getMaxSteps());
+
+                        boolean shouldAct = think();
+                        if (shouldAct) {
+                            act();
+                        } else {
+                            String visible = this.extractLatestAssistantTextForUser();
+                            if (visible != null && !visible.isBlank()) {
+                                String norm = normalizeForDedupe(visible);
+                                if (lastStreamedNormalized != null && norm.equals(lastStreamedNormalized)) {
+                                    log.debug("Skip duplicate user-facing reply (same as previous chunk)");
+                                } else {
+                                    emitter.send(visible);
+                                    lastStreamedNormalized = norm;
+                                    streamedUserFacing = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (this.getCurrentStep() >= this.getMaxSteps() && this.getState() != AgentState.FINISHED) {
+                        this.setState(AgentState.FINISHED);
+                        log.warn("Agent reached max steps ({}) without terminate; not showing limit message to user",
+                                this.getMaxSteps());
+                    }
+
+                    if (!streamedUserFacing) {
+                        String fallback = this.extractLatestAssistantTextForUser();
+                        if (fallback != null && !fallback.isBlank()) {
+                            emitter.send(fallback);
+                        } else {
+                            emitter.send("任务已结束。如需下载生成的文件，请在消息中查找「下载 PDF」按钮或说明你的下一步需求。");
+                        }
+                    }
+
+                    emitter.complete();
+                } catch (Exception e) {
+                    this.setState(AgentState.ERROR);
+                    log.error("执行智能体失败", e);
+                    try {
+                        emitter.send("执行错误: " + e.getMessage());
+                        emitter.complete();
+                    } catch (Exception ex) {
+                        emitter.completeWithError(ex);
+                    }
+                } finally {
+                    this.cleanup();
+                }
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+        });
+
+        emitter.onTimeout(() -> {
+            this.setState(AgentState.ERROR);
+            this.cleanup();
+            log.warn("SSE connection timed out");
+        });
+
+        emitter.onCompletion(() -> {
+            if (this.getState() == AgentState.RUNNING) {
+                this.setState(AgentState.FINISHED);
+            }
+            this.cleanup();
+            log.info("SSE connection completed");
+        });
+
+        return emitter;
+    }
+
+    private String extractLatestAssistantTextForUser() {
+        List<Message> list = getMessageList();
+        for (int i = list.size() - 1; i >= 0; i--) {
+            Message m = list.get(i);
+            if (m instanceof AssistantMessage am) {
+                String t = am.getText();
+                if (t != null && !t.isBlank()) {
+                    return t;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String normalizeForDedupe(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replaceAll("\\s+", " ").trim();
     }
 
 }

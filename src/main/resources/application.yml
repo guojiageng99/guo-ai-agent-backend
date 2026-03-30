@@ -45,5 +45,7 @@ knife4j:
 app:
   rag:
     pgvector-enabled: true
+  # 生产环境可填公网 API 根地址（无尾斜杠），例如 https://api.example.com，便于 PDF 工具在回复中输出完整下载 URL
+  public-base-url: ""
 
 

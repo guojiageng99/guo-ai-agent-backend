@@ -13,13 +13,19 @@ public class ToolRegistration {
     private String searchApiKey;
 
     @Bean
-    public ToolCallback[] allTools() {
+    public PDFGenerationTool pdfGenerationTool(
+            @Value("${app.public-base-url:}") String publicBaseUrl,
+            @Value("${server.servlet.context-path:/api}") String servletContextPath) {
+        return new PDFGenerationTool(publicBaseUrl, servletContextPath);
+    }
+
+    @Bean
+    public ToolCallback[] allTools(PDFGenerationTool pdfGenerationTool) {
         FileOperationTool fileOperationTool = new FileOperationTool();
         WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
         WebScrapingTool webScrapingTool = new WebScrapingTool();
         ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
         TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
-        PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
         TerminateTool terminateTool = new TerminateTool();
 
         return ToolCallbacks.from(

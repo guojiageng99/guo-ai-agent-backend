@@ -18,8 +18,32 @@
         >
           <div class="message-content">
             <div class="avatar">{{ msg.role === 'user' ? '我' : 'AI' }}</div>
-            <div class="bubble">{{ msg.content }}</div>
+            <div v-if="msg.role === 'user'" class="bubble">{{ msg.content }}</div>
+            <div v-else class="bubble bubble-rich">
+              <span v-if="msg.isStreaming && !msg.content.trim()" class="typing-placeholder">正在生成…</span>
+              <template v-else>
+                <template v-for="(seg, si) in parseTextWithPdfLinks(msg.content)" :key="si">
+                  <span v-if="seg.type === 'text'">{{ seg.text }}</span>
+                  <button
+                    v-else
+                    type="button"
+                    class="pdf-download-btn"
+                    @click="onPdfDownload(seg.url)"
+                  >
+                    下载 PDF
+                  </button>
+                </template>
+              </template>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div v-if="loading" class="processing-hint" role="status" aria-live="polite">
+        <span class="processing-spinner" aria-hidden="true"></span>
+        <div class="processing-text">
+          <span class="processing-title">正在处理</span>
+          <span class="processing-sub">智能体正在推理或调用工具，请稍候…</span>
         </div>
       </div>
 
@@ -48,6 +72,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { chatWithManusSse } from '../utils/sse'
 import { clearAuth, getStoredUsername } from '../utils/authToken'
+import { parseTextWithPdfLinks, downloadAuthenticatedPdf } from '../utils/pdfDownload'
 
 const router = useRouter()
 const displayName = computed(() => getStoredUsername() || '用户')
@@ -74,19 +99,31 @@ async function sendMessage() {
   await nextTick()
   scrollToBottom()
 
+  const aiMsg = { role: 'assistant', content: '', isStreaming: true }
+  messages.value.push(aiMsg)
+
   abortController = chatWithManusSse(text, {
     onChunk: (chunk) => {
-      if (chunk && chunk.trim()) {
-        messages.value.push({ role: 'assistant', content: chunk.trim() })
-        nextTick(scrollToBottom)
-      }
+      const t = chunk != null ? String(chunk).trim() : ''
+      if (!t) return
+      aiMsg.content += (aiMsg.content ? '\n\n' : '') + t
+      nextTick(scrollToBottom)
     },
     onComplete: () => {
+      aiMsg.isStreaming = false
+      if (!aiMsg.content.trim()) {
+        aiMsg.content = '（本轮未返回可见正文，请换种方式描述需求或稍后重试。）'
+      }
       loading.value = false
       nextTick(scrollToBottom)
     },
     onError: (err) => {
-      messages.value.push({ role: 'assistant', content: `[错误: ${err.message}]` })
+      aiMsg.isStreaming = false
+      if (!aiMsg.content.trim()) {
+        aiMsg.content = `[错误: ${err.message}]`
+      } else {
+        aiMsg.content += `\n\n[错误: ${err.message}]`
+      }
       loading.value = false
       nextTick(scrollToBottom)
     }
@@ -96,6 +133,18 @@ async function sendMessage() {
 function scrollToBottom() {
   if (messagesRef.value) {
     messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+  }
+}
+
+async function onPdfDownload(url) {
+  try {
+    await downloadAuthenticatedPdf(url)
+  } catch (e) {
+    messages.value.push({
+      role: 'assistant',
+      content: `[下载失败: ${e?.message || e}]。请确认已登录，且链接未过期。]`
+    })
+    nextTick(scrollToBottom)
   }
 }
 </script>
@@ -263,6 +312,82 @@ function scrollToBottom() {
   background: var(--color-bg-elevated);
   border-color: var(--color-border);
   color: var(--color-text);
+}
+
+.bubble-rich {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.typing-placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.pdf-download-btn {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 6px 12px;
+  margin: 0 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #fff;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.pdf-download-btn:hover {
+  opacity: 0.92;
+}
+
+.processing-hint {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 12px;
+  padding: 12px 16px;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+}
+
+.processing-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(6, 182, 212, 0.25);
+  border-top-color: var(--color-accent-manus);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: manus-spin 0.75s linear infinite;
+}
+
+.processing-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.processing-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-accent-manus);
+}
+
+.processing-sub {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+@keyframes manus-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .input-area {
