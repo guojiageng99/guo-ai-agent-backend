@@ -90,7 +90,9 @@ public class PDFGenerationTool {
             return "PDF 已生成。用户登录后可在 Manus 对话中点击「下载 PDF」按钮，或访问：" + urlLine
                     + " （须在请求头携带 Authorization: Bearer 令牌；应用内按钮会自动携带）。服务端文件：" + abs;
         } catch (IOException e) {
-            return "生成 PDF 失败：" + e.getMessage();
+            Throwable c = e.getCause();
+            String detail = c != null ? e.getMessage() + "；原因：" + c.getMessage() : e.getMessage();
+            return "生成 PDF 失败：" + detail + "（请检查进程对目录 " + fileDir + " 的写权限，以及磁盘空间）";
         }
     }
 

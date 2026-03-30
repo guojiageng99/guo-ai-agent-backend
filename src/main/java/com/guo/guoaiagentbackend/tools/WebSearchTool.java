@@ -32,17 +32,19 @@ public class WebSearchTool {
         paramMap.put("engine", "baidu");
         try {
             String response = HttpUtil.get(SEARCH_API_URL, paramMap);
-            // 取出返回结果的前 5 条
             JSONObject jsonObject = JSONUtil.parseObj(response);
-            // 提取 organic_results 部分
+            if (jsonObject.containsKey("error")) {
+                return "Error searching Baidu: " + jsonObject.getStr("error", jsonObject.toString());
+            }
             JSONArray organicResults = jsonObject.getJSONArray("organic_results");
-            List<Object> objects = organicResults.subList(0, 5);
-            // 拼接搜索结果为字符串
-            String result = objects.stream().map(obj -> {
-                JSONObject tmpJSONObject = (JSONObject) obj;
-                return tmpJSONObject.toString();
-            }).collect(Collectors.joining(","));
-            return result;
+            if (organicResults == null || organicResults.isEmpty()) {
+                return "Error searching Baidu: no organic_results (API 未返回自然结果，可能被限流、无结果或响应结构变化)";
+            }
+            int n = Math.min(5, organicResults.size());
+            List<Object> objects = organicResults.subList(0, n);
+            return objects.stream()
+                    .map(obj -> ((JSONObject) obj).toString())
+                    .collect(Collectors.joining(","));
         } catch (Exception e) {
             return "Error searching Baidu: " + e.getMessage();
         }

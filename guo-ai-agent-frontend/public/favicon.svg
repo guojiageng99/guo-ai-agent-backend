@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Guo AI Agent">
+  <defs>
+    <linearGradient id="edge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="core" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+  </defs>
+  <!-- 深色底板 + 细边框，略像设备前面板 -->
+  <rect width="32" height="32" rx="8" fill="#060a12" stroke="url(#edge)" stroke-width="0.75" opacity="0.85"/>
+  <!-- 六边形「算力核心」 -->
+  <path fill="url(#core)" stroke="url(#edge)" stroke-width="0.65"
+    d="M16 8.2l5.4 3.1v6.2L16 20.6l-5.4-3.1v-6.2z"/>
+  <circle cx="16" cy="14.4" r="2.1" fill="#ecfeff" opacity="0.92"/>
+  <!-- 三颗卫星节点 + 弧线轨道，暗示多智能体协同 -->
+  <g fill="none" stroke="url(#edge)" stroke-width="1.35" stroke-linecap="round">
+    <path d="M16 5.2a11.2 11.2 0 0 1 9.7 5.6" opacity="0.55"/>
+    <path d="M25.7 10.8a11.2 11.2 0 0 1-1.4 10.8" opacity="0.55"/>
+    <path d="M24.3 21.6a11.2 11.2 0 0 1-16.6 0" opacity="0.55"/>
+    <path d="M16 14.4L16 5.8M16 14.4l8.2 4.7M16 14.4l-8.2 4.7"/>
+  </g>
+  <circle cx="16" cy="5" r="1.65" fill="#67e8f9"/>
+  <circle cx="24.5" cy="19.2" r="1.65" fill="#67e8f9"/>
+  <circle cx="7.5" cy="19.2" r="1.65" fill="#67e8f9"/>
+</svg>

@@ -5,6 +5,20 @@ import { getToken } from './authToken'
 const PDF_PATH_RE = /(\/api\/files\/pdf\/[^\s]+|https?:\/\/[^\s]+\/api\/files\/pdf\/[^\s]+)/gi
 
 /**
+ * 模型常在 URL 后直接接中文句号、右括号等；[^\s]+ 会把它们吃进链接，导致请求 400/403。
+ */
+export function normalizePdfLink(raw) {
+  if (raw == null || raw === '') {
+    return raw
+  }
+  let s = raw.trim()
+  // 中文标点 + 英文标点/括号（模型常把句号、右括号紧贴在 URL 后）
+  s = s.replace(/[。，、；：．]+$/u, '')
+  s = s.replace(/[.,;:!?)\]}>"'`「」『』（）【】《》〈〉]+$/u, '')
+  return s
+}
+
+/**
  * 将文本拆成普通片段与 PDF 链接片段，供 Manus 气泡渲染「下载」按钮。
  */
 export function parseTextWithPdfLinks(text) {
@@ -19,7 +33,7 @@ export function parseTextWithPdfLinks(text) {
     if (m.index > last) {
       parts.push({ type: 'text', text: text.slice(last, m.index) })
     }
-    parts.push({ type: 'pdf', url: m[1] })
+    parts.push({ type: 'pdf', url: normalizePdfLink(m[1]) })
     last = m.index + m[1].length
   }
   if (last < text.length) {
@@ -32,7 +46,7 @@ export function parseTextWithPdfLinks(text) {
  * 使用当前登录 JWT 拉取 PDF 并触发浏览器下载（直接打开链接无法带 Authorization）。
  */
 export async function downloadAuthenticatedPdf(pathOrUrl) {
-  let path = pathOrUrl.trim()
+  let path = normalizePdfLink(pathOrUrl)
   if (/^https?:\/\//i.test(path)) {
     const u = new URL(path)
     path = u.pathname + u.search
