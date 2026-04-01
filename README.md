@@ -1,93 +1,112 @@
-# AI 智能体应用
+# Guo AI Agent — 全栈 AI 智能体应用
 
-基于 Spring AI + Vue3 的全栈 AI 应用，包含**恋语AI恋爱大师**情感咨询与**AI 超级智能体**多工具协作两大应用。
+基于 **Spring Boot**、**Spring AI** 与 **Vue 3** 的全栈项目，提供 **恋语 AI 恋爱大师**（情感咨询、RAG、工具调用）与 **AI 超级智能体 Manus**（多工具协作、流式输出）两大应用；内置 **JWT 鉴权**与 **公网演示配额**（按用户 / 按 IP），便于安全上线展示。
 
-## 项目结构
+---
 
-```
-guo-ai-agent-backend/
-├── pom.xml                    # 后端 Maven 配置
-├── src/                       # 后端 Spring Boot 源码
-│   └── main/
-│       ├── java/              # Java 源码
-│       └── resources/         # 配置文件
-├── guo-ai-agent-frontend/     # 前端 Vue3 项目
-│   ├── package.json
-│   ├── src/
-│   └── dist/                  # 构建产物（部署用）
-└── README.md
-```
+## 目录
+
+- [功能概览](#功能概览)
+- [技术栈](#技术栈)
+- [仓库结构](#仓库结构)
+- [环境要求](#环境要求)
+- [快速开始](#快速开始)
+- [配置说明](#配置说明)
+- [认证与配额](#认证与配额)
+- [数据库与建表](#数据库与建表)
+- [API 与文档](#api-与文档)
+- [生产部署](#生产部署)
+- [常见问题](#常见问题)
+
+---
+
+## 功能概览
+
+| 模块 | 说明 |
+|------|------|
+| **恋语 AI** | 多轮对话、SSE 流式输出、RAG 知识库（PGVector）、可选 MCP 工具（如地图） |
+| **超级智能体 Manus** | 基于工具链的自主规划与执行，网页搜索、资源处理、PDF 等 |
+| **用户系统** | 注册 / 登录、JWT 无状态鉴权；`/ai/**` 需登录访问 |
+| **演示防护** | 恋语与 Manus **分别**每日调用上限；按公网 IP 限制每日注册次数 |
+
+---
 
 ## 技术栈
 
 ### 后端
-- **Spring Boot 3.4** + **Java 21**
-- **Spring AI**：大模型集成（阿里云通义千问）
-- **PGVector**：向量存储（RAG 知识库）
-- **Spring AI MCP**：工具调用与 MCP 服务
-- **Knife4j**：API 文档
+
+- Java **21**、Spring Boot **3.4**
+- **Spring Security** + **JWT**（jjwt）
+- **Spring AI**、**Spring AI Alibaba**（通义千问 DashScope）
+- **PostgreSQL** + **pgvector**（向量检索）
+- **Spring AI MCP Client**
+- **Knife4j** / OpenAPI 3
 
 ### 前端
-- **Vue 3** + **Vite 5**
-- **Vue Router** + **Axios**
-- 响应式布局，支持 PC / 平板 / 手机
 
-## 功能模块
+- **Vue 3**、**Vite 5**、**Vue Router**、**Axios**
+- 响应式布局，适配桌面与移动端
 
-| 应用 | 说明 |
-|------|------|
-| 恋语AI恋爱大师 | 情感咨询，多轮对话，RAG 知识库，MCP 工具（如地图服务） |
-| AI 超级智能体 | ReAct 自主规划，网页搜索、资源下载、PDF 生成等工具 |
+---
+
+## 仓库结构
+
+```
+guo-ai-agent-backend/
+├── pom.xml                         # Maven 配置
+├── src/main/java/                  # 后端源码（包：com.guo.guoaiagentbackend）
+├── src/main/resources/
+│   ├── application.yml             # 公共配置（含 app.quota 默认值）
+│   └── application-local.yml       # 本地覆盖（密钥勿提交）
+├── guo-ai-agent-frontend/          # Vue3 前端
+│   ├── vite.config.js              # 开发代理 /api → 后端
+│   ├── src/
+│   └── dist/                       # 生产构建产物
+└── README.md
+```
+
+---
 
 ## 环境要求
 
-- **JDK 21**
-- **Maven 3.6+**
-- **Node.js 18+**、**npm**
-- **PostgreSQL**（含 pgvector 扩展，用于 RAG 向量存储）
+| 依赖 | 版本建议 |
+|------|-----------|
+| JDK | **21** |
+| Maven | 3.6+ |
+| Node.js | **18+**（npm） |
+| PostgreSQL | 支持 **pgvector** 扩展的实例 |
 
-## 配置说明
+---
 
-### 后端配置
+## 快速开始
 
-复制并编辑 `src/main/resources/application-local.yml`：
+### 1. 准备数据库
 
-```yaml
-# 阿里云 DashScope API Key（必填）
-spring:
-  ai:
-    dashscope:
-      api-key: "your-dashscope-api-key"
+创建数据库并启用 `pgvector`（具体命令依你的 PG 版本而定），在 `application-local.yml` 中配置 `spring.datasource.*`。
 
-  # PostgreSQL 向量库（恋语AI 知识库）
-  datasource:
-    url: jdbc:postgresql://host:5432/yu_ai_agent
-    username: postgres
-    password: your-password
+### 2. 本地配置
 
-# 搜索 API（AI 超级智能体网页搜索）
-search-api:
-  api-key: your-search-api-key
-```
+复制或编辑 `src/main/resources/application-local.yml`，至少配置：
 
-默认激活 `local` 配置：`spring.profiles.active: local`。
+- `spring.ai.dashscope.api-key`（或等价配置项）
+- `spring.datasource.url` / `username` / `password`
+- `app.jwt.secret`（生产须为足够长度的随机密钥）
+- 超级智能体网页搜索等：`search-api.api-key`（若使用该能力）
 
-### 前端配置
+**切勿将含真实密钥的 `application-local.yml` 推送到公开仓库。**
 
-开发环境通过 Vite 代理访问后端，无需额外配置。生产环境需确保前端请求的 API 地址正确（`vite.config.js` 或环境变量）。
-
-## 开发运行
-
-### 1. 启动后端
+### 3. 启动后端
 
 ```bash
 cd guo-ai-agent-backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-后端默认：`http://localhost:8123`，接口前缀 `/api`。
+- 监听端口：**8123**
+- **Servlet context-path：`/api`**  
+  即健康检查等为：`http://localhost:8123/api/health`（若已配置）
 
-### 2. 启动前端
+### 4. 启动前端
 
 ```bash
 cd guo-ai-agent-frontend
@@ -95,103 +114,169 @@ npm install
 npm run dev
 ```
 
-前端默认：`http://localhost:5173`，代理 `/api` 到后端。
+- 开发地址：`http://localhost:5173`
+- 请求 `/api` 由 Vite 代理至 `http://localhost:8123`
 
-## 部署（Bash 命令行）
+---
 
-### 一、后端部署
+## 配置说明
 
-```bash
-# 1. 进入后端目录
-cd guo-ai-agent-backend
+### 默认 Profile
 
-# 2. 清理并打包（跳过测试可选）
-mvn clean package -DskipTests
+`application.yml` 中 `spring.profiles.active` 默认为 `local`，本地开发加载 `application-local.yml`。
 
-# 3. 运行 JAR
-java -jar target/guo-ai-agent-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
+### 业务相关
 
-# 或指定端口、配置文件
-java -jar target/guo-ai-agent-backend-0.0.1-SNAPSHOT.jar \
-  --spring.profiles.active=local \
-  --server.port=8123
+| 配置项 | 说明 |
+|--------|------|
+| `app.public-base-url` | 生产可填公网 API 根地址（无尾斜杠），供 PDF 等工具生成完整下载链接 |
+| `app.rag.pgvector-enabled` | 是否启用本地 PGVector 相关能力（按环境调整） |
+
+### 配额（`app.quota`）
+
+在 `application.yml` 中可调整（亦可在 `application-local.yml` 覆盖）：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `enabled` | `true` | 总开关；本地调试可设为 `false` 关闭全部配额逻辑 |
+| `love-app-requests-per-user-per-day` | `8` | 恋语 `/ai/love_app/**` 每用户每日次数 |
+| `manus-requests-per-user-per-day` | `8` | Manus `/ai/manus/**` 每用户每日次数 |
+| `registrations-per-ip-per-day` | `2` | 每 IP 每自然日允许**成功注册**次数 |
+
+---
+
+## 认证与配额
+
+### 认证
+
+- 注册：`POST /api/auth/register`
+- 登录：`POST /api/auth/login`，返回 JWT
+- 调用受保护接口时在 Header 携带：`Authorization: Bearer <token>`
+- `/ai/**` 在 Spring Security 中要求已认证用户
+
+### 配额行为摘要
+
+- **AI 调用**：在 JWT 校验通过之后、进入 Controller 之前按路径区分 **恋语** / **Manus** 分别计数；超限返回 **HTTP 429**，消息体为业务 JSON（如「恋语 AI 今日次数已用完」/「超级智能体今日次数已用完」）。
+- **注册**：在同一事务内先校验用户名，再按客户端 IP 占用「当日注册额度」，防止刷号；超限提示「本 IP 今日注册次数已达上限」。
+- **客户端 IP**：由 `ClientIpResolver` 读取 `X-Forwarded-For`（取第一项）、`X-Real-IP`，最后回退 `remoteAddr`。反向代理须在 `location /api` 中设置：
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 ```
 
-### 二、前端部署
+SSE 场景建议关闭 `proxy_buffering` 并适当增大读写超时（见下文部署示例）。
 
-```bash
-# 1. 进入前端目录
-cd guo-ai-agent-frontend
+---
 
-# 2. 安装依赖
-npm install
+## 数据库与建表
 
-# 3. 构建生产包
-npm run build
+应用启动时由 `QuotaSchemaInitializer` 执行 DDL（**无独立 Flyway 文件**），在已连接的数据库中自动维护：
 
-# 4. 构建产物在 dist/ 目录，可部署到 Nginx 等静态服务器
+| 表名 | 用途 |
+|------|------|
+| `daily_ai_usage` | 按 `username` + `usage_date` + `app_scope`（`love` / `manus`）统计当日调用次数 |
+| `daily_ip_registration` | 按 `client_ip` + `reg_date` 统计当日成功注册次数 |
+
+若曾使用旧版仅 `(username, usage_date)` 主键的 `daily_ai_usage`，启动时会将旧表重命名为 `daily_ai_usage_legacy` 并创建新表（历史计数不迁移）。
+
+**查询示例：**
+
+```sql
+SELECT * FROM daily_ai_usage ORDER BY usage_date DESC, username;
+SELECT * FROM daily_ip_registration ORDER BY reg_date DESC, client_ip;
 ```
 
-### 三、Nginx 部署前后端（示例）
+---
 
-```bash
-# 假设 Nginx 配置目录为 /etc/nginx/
-# 将 dist 内容复制到 /var/www/ai-agent/
-cp -r guo-ai-agent-frontend/dist/* /var/www/ai-agent/
+## API 与文档
 
-# Nginx 配置示例（/etc/nginx/sites-available/ai-agent）：
-# server {
-#     listen 80;
-#     server_name your-domain.com;
-#     root /var/www/ai-agent;
-#     index index.html;
-#     location / {
-#         try_files $uri $uri/ /index.html;
-#     }
-#     location /api {
-#         proxy_pass http://127.0.0.1:8123;
-#         proxy_http_version 1.1;
-#         proxy_set_header Host $host;
-#         proxy_set_header X-Real-IP $remote_addr;
-#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-#         proxy_set_header X-Forwarded-Proto $scheme;
-#     }
-# }
-```
+### 主要接口（均需登录，除 auth 外）
 
-### 四、一键部署脚本示例
-
-```bash
-#!/bin/bash
-set -e
-
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-BACKEND_DIR="$PROJECT_ROOT"
-FRONTEND_DIR="$PROJECT_ROOT/guo-ai-agent-frontend"
-
-echo "=== 构建后端 ==="
-cd "$BACKEND_DIR"
-mvn clean package -DskipTests
-
-echo "=== 构建前端 ==="
-cd "$FRONTEND_DIR"
-npm install
-npm run build
-
-echo "=== 部署完成 ==="
-echo "后端 JAR: $BACKEND_DIR/target/guo-ai-agent-backend-0.0.1-SNAPSHOT.jar"
-echo "前端静态: $FRONTEND_DIR/dist/"
-```
-
-## API 接口
-
-| 接口 | 方法 | 说明 |
+| 路径 | 方法 | 说明 |
 |------|------|------|
-| `/api/ai/love_app/chat/sse` | GET | 恋语AI 流式对话（SSE），参数：`message`、`chatId` |
-| `/api/ai/manus/chat` | GET | AI 超级智能体流式对话（SSE），参数：`message` |
+| `/api/auth/register` | POST | 注册 |
+| `/api/auth/login` | POST | 登录 |
+| `/api/auth/me` | GET | 当前用户 |
+| `/api/ai/love_app/chat/sse` | GET | 恋语流式对话，Query：`message`、`chatId` |
+| `/api/ai/love_app/chat/recommend_partner` | GET | 恋语对象推荐（RAG） |
+| `/api/ai/manus/chat` | GET | Manus 流式对话，Query：`message` |
 
-API 文档：`http://localhost:8123/api/doc.html`（Knife4j）
+### 在线文档
+
+启动后端后访问（路径以实际部署为准）：
+
+- **Knife4j**：`http://localhost:8123/api/doc.html`
+
+---
+
+## 生产部署
+
+### 后端
+
+```bash
+mvn clean package -DskipTests
+java -jar target/guo-ai-agent-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
+```
+
+（建议使用独立 `application-prod.yml` 管理密钥与数据库，勿使用 `local` 配置上线。）
+
+### 前端
+
+```bash
+cd guo-ai-agent-frontend
+npm ci
+npm run build
+```
+
+将 `dist/` 部署到 Nginx（或其它静态资源服务器）根目录，**SPA 回退**到 `index.html`。
+
+### Nginx 要点示例
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+    root /var/www/guo-ai-agent-frontend;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://127.0.0.1:8123;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}
+```
+
+修改配置后执行 `nginx -t` 并重载 Nginx。
+
+---
+
+## 常见问题
+
+**本地不想被配额限制？**  
+在 `application-local.yml` 设置 `app.quota.enabled: false`。
+
+**配额已开但 IP 不准？**  
+确认最外层反向代理是否传入 `X-Forwarded-For` / `X-Real-IP`；若前方还有 CDN，需在 CDN 侧开启真实 IP 传递。
+
+**SSE 中断或缓冲延迟？**  
+确认 Nginx 对 `/api` 使用 `proxy_buffering off` 并足够大的 `proxy_read_timeout`。
+
+---
 
 ## 许可证
 
-© AI 智能体应用 版权所有
+本项目为私有/演示用途时请自行声明版权与使用范围；若开源请替换本节并补充 `LICENSE` 文件。

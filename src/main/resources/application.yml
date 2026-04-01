@@ -47,5 +47,11 @@ app:
     pgvector-enabled: true
   # 生产环境可填公网 API 根地址（无尾斜杠），例如 https://api.example.com，便于 PDF 工具在回复中输出完整下载 URL
   public-base-url: ""
+  # 公网演示防刷：依赖 PostgreSQL 表 daily_ai_usage / daily_ip_registration（启动时自动建表）
+  quota:
+    enabled: true
+    love-app-requests-per-user-per-day: 8
+    manus-requests-per-user-per-day: 8
+    registrations-per-ip-per-day: 2
 
 

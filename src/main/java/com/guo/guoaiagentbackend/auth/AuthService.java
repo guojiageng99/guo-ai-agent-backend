@@ -2,6 +2,7 @@ package com.guo.guoaiagentbackend.auth;
 
 import com.guo.guoaiagentbackend.exception.BusinessException;
 import com.guo.guoaiagentbackend.exception.ErrorCode;
+import com.guo.guoaiagentbackend.quota.QuotaService;
 import com.guo.guoaiagentbackend.user.AppUser;
 import com.guo.guoaiagentbackend.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,18 +17,25 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final QuotaService quotaService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            QuotaService quotaService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.quotaService = quotaService;
     }
 
     @Transactional
-    public Map<String, Object> register(String username, String password) {
+    public Map<String, Object> register(String username, String password, String clientIp) {
         if (userRepository.existsByUsername(username)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名已存在");
         }
+        quotaService.consumeRegistrationIpOrThrow(clientIp);
         String hash = passwordEncoder.encode(password);
         long id = userRepository.insert(username, hash);
         String token = jwtService.generateToken(id, username);

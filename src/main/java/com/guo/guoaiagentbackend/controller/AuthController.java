@@ -6,6 +6,8 @@ import com.guo.guoaiagentbackend.auth.dto.RegisterRequest;
 import com.guo.guoaiagentbackend.common.BaseResponse;
 import com.guo.guoaiagentbackend.common.ResultUtils;
 import com.guo.guoaiagentbackend.exception.ErrorCode;
+import com.guo.guoaiagentbackend.quota.ClientIpResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,8 +29,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public BaseResponse<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
-        return ResultUtils.success(authService.register(request.getUsername(), request.getPassword()));
+    public BaseResponse<Map<String, Object>> register(
+            @Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        String ip = ClientIpResolver.resolve(httpRequest);
+        return ResultUtils.success(authService.register(request.getUsername(), request.getPassword(), ip));
     }
 
     @PostMapping("/login")

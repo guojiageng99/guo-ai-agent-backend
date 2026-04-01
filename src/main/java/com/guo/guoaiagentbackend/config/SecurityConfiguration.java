@@ -1,6 +1,7 @@
 package com.guo.guoaiagentbackend.config;
 
 import com.guo.guoaiagentbackend.auth.JwtAuthenticationFilter;
+import com.guo.guoaiagentbackend.quota.AiUsageQuotaFilter;
 import com.guo.guoaiagentbackend.common.BaseResponse;
 import com.guo.guoaiagentbackend.common.ResultUtils;
 import com.guo.guoaiagentbackend.exception.ErrorCode;
@@ -29,7 +30,11 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, ObjectMapper objectMapper)
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationFilter jwtFilter,
+            AiUsageQuotaFilter aiUsageQuotaFilter,
+            ObjectMapper objectMapper)
             throws Exception {
         http
                 .cors(Customizer.withDefaults())
@@ -58,7 +63,8 @@ public class SecurityConfiguration {
                     BaseResponse<?> body = ResultUtils.error(ErrorCode.NOT_LOGIN_ERROR, "未登录或登录已失效");
                     response.getWriter().write(objectMapper.writeValueAsString(body));
                 }))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(aiUsageQuotaFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 }
